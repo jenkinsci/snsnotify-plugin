@@ -41,5 +41,14 @@
             <f:booleanRadio name="snsnotify.defaultSendNotificationOnStart" />
         </f:entry>
 
+        <f:entry 
+            title="Use Local Credential" 
+            help="/plugin/snsnotify/help-defaultCredential.html"
+            field="defaultLocalCredential">
+
+            <f:checkbox name="snsnotify.defaultLocalCredential" />
+        </f:entry>
+
+
     </f:section>
 </j:jelly>

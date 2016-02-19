@@ -1,5 +1,7 @@
 package org.jenkinsci.plugins.snsnotify;
 
+import com.amazonaws.auth.AWSCredentialsProviderChain;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.PublishRequest;
@@ -102,13 +104,14 @@ public class AmazonSNSNotifier extends Notifier {
         String awsSecretKey = getDescriptor().getAwsSecretKey();
         String publishTopic = isEmpty(projectTopicArn) ?
                 getDescriptor().getDefaultTopicArn() : projectTopicArn;
+        Boolean useLocalCredential = getDescriptor().getDefaultLocalCredential();
 
         if (isEmpty(publishTopic)) {
             listener.error("No global or project topic ARN sent; cannot send SNS notification");
             return;
         }
 
-        if (isEmpty(awsAccessKey) || isEmpty(awsSecretKey)) {
+        if (!(useLocalCredential) && (isEmpty(awsAccessKey) || isEmpty(awsSecretKey))) {
             listener.error("AWS credentials not configured; cannot send SNS notification");
             return;
         }
@@ -135,8 +138,15 @@ public class AmazonSNSNotifier extends Notifier {
                 isEmpty(messageTemplate) ? getDescriptor().getDefaultMessageTemplate() : messageTemplate);
 
         LOG.info("Setup SNS client '" + snsApiEndpoint + "' ...");
-        AmazonSNSClient snsClient = new AmazonSNSClient(
-                new BasicAWSCredentials(awsAccessKey, awsSecretKey));
+
+        AmazonSNSClient snsClient;
+        if(useLocalCredential==true){
+          snsClient = new AmazonSNSClient(
+              new DefaultAWSCredentialsProviderChain().getCredentials());
+        }else{
+          snsClient = new AmazonSNSClient(
+            new BasicAWSCredentials(awsAccessKey, awsSecretKey));
+        }
         snsClient.setEndpoint(snsApiEndpoint);
 
         try {
@@ -222,6 +232,7 @@ public class AmazonSNSNotifier extends Notifier {
         private String defaultTopicArn;
         private String defaultMessageTemplate;
         private boolean defaultSendNotificationOnStart;
+        private boolean defaultLocalCredential;
 
         public DescriptorImpl() {
             super(AmazonSNSNotifier.class);
@@ -245,6 +256,7 @@ public class AmazonSNSNotifier extends Notifier {
             defaultTopicArn = formData.getString("defaultTopicArn");
             defaultMessageTemplate = formData.getString("defaultMessageTemplate");
             defaultSendNotificationOnStart = formData.getBoolean("defaultSendNotificationOnStart");
+            defaultLocalCredential = formData.getBoolean("defaultLocalCredential");
 
             save();
             return super.configure(req, formData);
@@ -266,6 +278,10 @@ public class AmazonSNSNotifier extends Notifier {
             return StringUtils.isEmpty(defaultMessageTemplate) ? "${BUILD_URL}" : defaultMessageTemplate;
         }
 
+        public boolean getDefaultLocalCredential(){
+          return defaultLocalCredential;
+        }
+
         public boolean isDefaultSendNotificationOnStart() {
             return defaultSendNotificationOnStart;
         }
@@ -284,6 +300,10 @@ public class AmazonSNSNotifier extends Notifier {
 
         public void setDefaultMessageTemplate(String defaultMessageTemplate) {
             this.defaultMessageTemplate = defaultMessageTemplate;
+        }
+
+        public void setDefaultLocalCredential(boolean defaultLocalCredential){
+          this.defaultLocalCredential = defaultLocalCredential;
         }
 
         public void setDefaultSendNotificationOnStart(boolean defaultSendNotificationOnStart) {
