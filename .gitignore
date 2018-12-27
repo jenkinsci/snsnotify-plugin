@@ -8,3 +8,10 @@ pom.xml.releaseBackup
 *.iml
 *.iws
 /bin
+
+# ignore ide files
+.classpath
+.factorypath
+.project
+.settings
+.vscode

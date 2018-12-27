@@ -256,7 +256,13 @@ public class AmazonSNSNotifier extends Notifier {
         }
 
         String region = arnParts[3];
-        return "sns." + region + ".amazonaws.com";
+        String ret = "";
+        if (region.startsWith("cn-")){
+            ret = "sns." + region + ".amazonaws.com.cn";
+        } else {
+            ret = "sns." + region + ".amazonaws.com";
+        }
+        return ret;
     }
 
 
