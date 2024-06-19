@@ -5,6 +5,7 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.PublishRequest;
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -24,6 +25,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Logger;
@@ -110,6 +112,7 @@ public class AmazonSNSNotifier extends Notifier {
         String publishTopic = isEmpty(projectTopicArn) ?
                 getDescriptor().getDefaultTopicArn() : projectTopicArn;
         boolean useLocalCredential = getDescriptor().isDefaultLocalCredential();
+        Map<String,MessageAttributeValue> messageAttributes = new HashMap<>();
 
         if (isEmpty(publishTopic)) {
             listener.error("No global or project topic ARN sent; cannot send SNS notification");
@@ -135,6 +138,11 @@ public class AmazonSNSNotifier extends Notifier {
                     String.format("Build %s: %s",
                             phase == BuildPhase.STARTED || buildResult == null? "STARTED" : buildResult.toString(),
                             build.getFullDisplayName()), 100);
+
+            // ~~ prepare message result attribute
+            messageAttributes.put("result", new MessageAttributeValue()
+                                            .withDataType("String")
+                                            .withStringValue(buildResult == null? "STARTED" : buildResult.toString()));
         } else {
             subject = replaceVariables(build, listener, phase, subjectTemplate);
         }
@@ -142,6 +150,11 @@ public class AmazonSNSNotifier extends Notifier {
         // ~~ prepare message (incl. variable replacement)
         String message = replaceVariables(build, listener, phase, 
                 isEmpty(messageTemplate) ? getDescriptor().getDefaultMessageTemplate() : messageTemplate);
+
+        // ~~ prepare message phase attribute
+        messageAttributes.put("phase", new MessageAttributeValue()
+                                        .withDataType("String")
+                                        .withStringValue(phase.toString()));
 
         LOG.info("Setup SNS client '" + snsApiEndpoint + "' ...");
         AWSCredentialsProvider awsCredentialsProvider;
@@ -167,6 +180,7 @@ public class AmazonSNSNotifier extends Notifier {
             String summary = String.format("subject=%s topic=%s", subject, publishTopic);
             LOG.info("Publish SNS notification: " + summary + " ...");
             PublishRequest pubReq = new PublishRequest(publishTopic, message, subject);
+            pubReq.setMessageAttributes(messageAttributes);
             snsClient.publish(pubReq);
             listener.getLogger().println("Published SNS notification: " + summary);
         } catch (Exception e) {
