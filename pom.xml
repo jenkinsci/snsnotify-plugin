@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.88</version> <!-- or whatever the newest version available is -->
+        <version>5.5</version> <!-- or whatever the newest version available is -->
         <relativePath />
     </parent>
 
@@ -17,7 +17,7 @@
     <url>https://github.com/jenkinsci/snsnotify-plugin</url>
 
     <properties>
-        <jenkins.version>2.462.3</jenkins.version>
+        <jenkins.version>2.479.1</jenkins.version>
     </properties>
 
     <developers>
