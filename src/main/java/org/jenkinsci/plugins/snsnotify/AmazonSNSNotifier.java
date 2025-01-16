@@ -21,7 +21,7 @@ import hudson.util.Secret;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 import java.io.IOException;
 import java.util.Map;
@@ -326,7 +326,7 @@ public class AmazonSNSNotifier extends Notifier {
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+        public boolean configure(StaplerRequest2 req, JSONObject formData) throws FormException {
             req.bindJSON(this, formData);
             save();
             return true;
